@@ -73,6 +73,9 @@ if __name__ == '__main__':
         with open(album_fp, 'r') as album_fin:
             album_data = json.load(album_fin)
 
+        album_dir = youtubedl_dir / album_fp.stem
+        makedirs(album_dir, exist_ok=True)
+
         for song_metadata in album_data:
             filename = song_metadata['filename']
             description = song_metadata['description']
@@ -84,21 +87,35 @@ if __name__ == '__main__':
                 logger.info('No youtube ID found. Will skip.')
                 continue
 
-            cmd = f'{YOUTUBEDL_PATH} https://www.youtube.com/watch?v={youtube_id} -x -o "{youtubedl_dir}\{title}.%(ext)s"'
+            # Move any already downloaded file at main folder into its album folder.
+            for music_fp in Path(youtubedl_dir).glob(f'{title}.*'):
+                music_fp.rename(album_dir / music_fp.name)
+                break
 
+            # Rename any already downloaded file to use its database filename instead of title name.
+            for music_fp in Path(album_dir).glob(f'{title}.*'):
+                full_filename = filename + music_fp.suffix
+                if music_fp.name == full_filename:
+                    continue
+                music_fp.rename(album_dir / full_filename)
+                break
+
+            # Retrieve bgm if we don't already have it.
+            cmd = f'{YOUTUBEDL_PATH} https://www.youtube.com/watch?v={youtube_id} -x -o "{album_dir}\{filename}.%(ext)s"'
             downloaded_already = False
             found_music_fp = None
-            for music_fp in Path(youtubedl_dir).glob(f'{title}.*'):
+            for music_fp in Path(album_dir).glob(f'{filename}.*'):
                 downloaded_already = True
                 found_music_fp = music_fp
                 break
             else:
                 run_command(cmd)
-                for music_fp in Path(youtubedl_dir).glob(f'{title}.*'):
+                for music_fp in Path(album_dir).glob(f'{filename}.*'):
                     downloaded_already = True
                     found_music_fp = music_fp
                     break
 
+            # Fix up bgm metadata.
             if found_music_fp:
                 music = music_tag.load_file(found_music_fp)
 
