@@ -80,6 +80,10 @@ if __name__ == '__main__':
             youtube_id = song_metadata['youtube']
             logger.debug(f'Looking at filename: "{filename}", title: "{title}", description: "{description}"')
 
+            if not youtube_id:
+                logger.info('No youtube ID found. Will skip.')
+                continue
+
             cmd = f'{YOUTUBEDL_PATH} https://www.youtube.com/watch?v={youtube_id} -x -o "{youtubedl_dir}\{title}.%(ext)s"'
 
             downloaded_already = False
