@@ -41,9 +41,12 @@ def run_command(command):
     # Capture any error output
     stderr_output = process.stderr.read().strip()
     if stderr_output:
-        logger.error(stderr_output)
+        if stderr_output.find("Skipping embedding the thumbnail because the file is missing.") >= 0:
+            logger.warning(stderr_output)
 
-        raise RuntimeError(stderr_output)
+        else:
+            logger.error(stderr_output)      
+            raise RuntimeError(stderr_output)
 
 
 if __name__ == '__main__':
