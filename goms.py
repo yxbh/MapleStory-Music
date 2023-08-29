@@ -67,14 +67,11 @@ if __name__ == '__main__':
         # logger.error(f'Youtube content dir does not exist at: {youtubedl_dir}')
         # exit(-2)
 
-    for album_fp in maplebgm_db_dir.glob('*.json'):
+    for album_fp in maplebgm_db_dir.glob('**/*.json'):
         logger.debug(f'Inspecting: {album_fp}')
 
         with open(album_fp, 'r') as album_fin:
             album_data = json.load(album_fin)
-
-        album_dir = youtubedl_dir / album_fp.stem
-        makedirs(album_dir, exist_ok=True)
 
         for song_metadata in album_data:
             filename = song_metadata['filename']
@@ -86,6 +83,9 @@ if __name__ == '__main__':
             if not youtube_id:
                 logger.info('No youtube ID found. Will skip.')
                 continue
+
+            album_dir = youtubedl_dir / album_fp.stem
+            makedirs(album_dir, exist_ok=True)
 
             # Move any already downloaded file at main folder into its album folder.
             for music_fp in Path(youtubedl_dir).glob(f'{title}.*'):
@@ -101,19 +101,23 @@ if __name__ == '__main__':
                 break
 
             # Retrieve bgm if we don't already have it.
-            cmd = f'{YOUTUBEDL_PATH} https://www.youtube.com/watch?v={youtube_id} -x -o "{album_dir}\{filename}.%(ext)s"'
-            downloaded_already = False
+            cmd = f'{YOUTUBEDL_PATH} https://www.youtube.com/watch?v={youtube_id} -x --audio-quality 0 -o "{album_dir}\{filename}.%(ext)s"'
             found_music_fp = None
             for music_fp in Path(album_dir).glob(f'{filename}.*'):
-                downloaded_already = True
                 found_music_fp = music_fp
                 break
             else:
                 run_command(cmd)
                 for music_fp in Path(album_dir).glob(f'{filename}.*'):
-                    downloaded_already = True
                     found_music_fp = music_fp
                     break
+
+            # Rename .opus extensions to .ogg for compatibility.
+            for music_fp in Path(album_dir).glob(f'{filename}.*'):
+                if music_fp.suffix.lower() == ".opus":
+                    new_ogg_fp = album_dir / (music_fp.stem + ".ogg")
+                    music_fp.rename(new_ogg_fp)
+                    found_music_fp = new_ogg_fp
 
             # Fix up bgm metadata.
             if found_music_fp:
