@@ -101,7 +101,7 @@ if __name__ == '__main__':
                 break
 
             # Retrieve bgm if we don't already have it.
-            cmd = f'{YOUTUBEDL_PATH} https://www.youtube.com/watch?v={youtube_id} -x --audio-quality 0 -o "{album_dir}\{filename}.%(ext)s"'
+            cmd = f'{YOUTUBEDL_PATH} https://www.youtube.com/watch?v={youtube_id} -x --embed-thumbnail --audio-format m4a --audio-quality 0 -o "{album_dir}\{filename}.%(ext)s"'
             found_music_fp = None
             for music_fp in Path(album_dir).glob(f'{filename}.*'):
                 found_music_fp = music_fp
